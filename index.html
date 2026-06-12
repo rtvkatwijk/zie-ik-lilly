@@ -322,7 +322,7 @@ function toast(msg, ms=3200){ toastEl.textContent = msg; toastEl.style.display='
 
 // ---- share current viewpoint (screenshot + deep-link to this camera) ----
 function camHash(){
-  const p=camera.position, t=controls.target, r=v=>Math.round(v*10)/10;
+  const p=camera.position, t=controls.target, r=v=>Math.round(v);
   return `#v=${r(p.x)},${r(p.y)},${r(p.z)},${r(t.x)},${r(t.y)},${r(t.z)}`;
 }
 function applyHash(){
@@ -336,26 +336,15 @@ function applyHash(){
   btnEls.forEach(b=>b.classList.remove('active'));
   return true;
 }
+const SHARE_TEXT = 'Benieuwd of jij medicijnfabriek Eli Lilly zou zien vanuit je straat? Of vanaf de kerktoren? Alle Valkenburgers kunnen dat nu ontdekken via de simulatie Zie ik Lilly van RTV Katwijk.';
 document.getElementById('share').onclick = async ()=>{
   const url = location.origin + location.pathname + camHash();
-  let file=null;
   try{
-    renderer.render(scene, camera);
-    const dataUrl = renderer.domElement.toDataURL('image/png');
-    const blob = await (await fetch(dataUrl)).blob();
-    file = new File([blob], 'lilly-valkenburg.png', {type:'image/png'});
-  }catch(e){}
-  try{
-    if(file && navigator.canShare && navigator.canShare({files:[file]})){
-      await navigator.share({files:[file], title:'Eli Lilly Valkenburg', text:'Bekijk dit standpunt van de geplande fabriek', url});
-      return;
-    }
-    if(navigator.share){ await navigator.share({title:'Eli Lilly Valkenburg', text:'Bekijk dit standpunt van de geplande fabriek', url}); return; }
+    if(navigator.share){ await navigator.share({title:'Zie ik Lilly?', text:SHARE_TEXT, url}); return; }
   }catch(e){ if(e && e.name==='AbortError') return; }
-  // desktop fallback: download screenshot + copy deep-link
-  if(file){ const a=document.createElement('a'); a.href=URL.createObjectURL(file); a.download='lilly-valkenburg.png'; a.click(); }
-  try{ await navigator.clipboard.writeText(url); toast('Screenshot opgeslagen + link naar dit standpunt gekopieerd'); }
-  catch(e){ toast('Screenshot opgeslagen'); }
+  // fallback (geen deelmenu, bv. desktop): de link kopiëren
+  try{ await navigator.clipboard.writeText(url); toast('Link naar dit standpunt gekopieerd - plak hem in WhatsApp, mail of social media'); }
+  catch(e){ toast('Link: ' + url); }
 };
 // open a shared viewpoint link directly on this camera position
 applyHash();
